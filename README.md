@@ -1,1 +1,1 @@
-# EastLearnBot
+# EasyLearnBot
