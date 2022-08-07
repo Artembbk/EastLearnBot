@@ -163,12 +163,12 @@ def get_contexts(word):
     api = ReversoContextAPI(word, "", "en", "ru")
     examples_num = 0
     examples = []
-    for source, _ in api.get_examples():
-        examples.append(highlight_example(source.text, source.highlighted))
+    for source, translate in api.get_examples():    
+        examples.append([highlight_example(source.text, source.highlighted), 
+                        highlight_example(translate.text, translate.highlighted)])
         examples_num += 1
         if examples_num == 20:
             break
-    
     return examples
 
 def get_translations_nice_str(message, word):
@@ -180,7 +180,12 @@ def get_translations_nice_str(message, word):
         nice_str += '`; '
     return nice_str
 
-
+def get_contexts_nice_str(message, word):
+    data = load_user_data()
+    nice_str = ''
+    for context in data[str(message.chat.id)]["words"][word]["contexts"][:5]:
+        nice_str += context[0] + '\n=\n' + context[1] + '\n\n'
+    return nice_str
 
 @bot.message_handler(commands=['help', 'start'])
 def say_welcome(message):
@@ -220,11 +225,11 @@ def input_translate_word(message, is_first=True):
         data[str(message.chat.id)]["words"][word]["possible_translations"] = get_translations(word)
         data[str(message.chat.id)]["words"][word]["contexts"] = get_contexts(word)
         upload_user_data(data)
-    
+        
     word = data[str(message.chat.id)]["current_word"]
     bot.send_message(message.chat.id, INPUT_TRANSLATE_WORD, reply_markup=hide_markup, parse_mode="HTML")
     bot.send_message(message.chat.id, get_translations_nice_str(message, word), reply_markup=hide_markup, parse_mode="Markdown")
-    msg = bot.send_message(message.chat.id, "\n\n".join(data[str(message.chat.id)]["words"][word]["contexts"][:5]), reply_markup=hide_markup, parse_mode="Markdown")
+    msg = bot.send_message(message.chat.id, get_contexts_nice_str(message, word), reply_markup=hide_markup, parse_mode="Markdown")
     bot.register_next_step_handler(msg, handle_translate)
 
 def handle_translate(message):
